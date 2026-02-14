@@ -14,27 +14,34 @@ describe('UserController', () => {
   let logger: Logger;
   let testService: TestService;
 
+  const prismaMock = {
+    user: {
+      deleteMany: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+    },
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
+    $on: jest.fn(),
+  };
+
   beforeEach(async () => {
+    jest.clearAllMocks();
+
+    prismaMock.user.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.user.count.mockResolvedValue(0);
+    prismaMock.user.create.mockImplementation(({ data }) =>
+      Promise.resolve({
+        id: 1,
+        ...data,
+      }),
+    );
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, TestModule],
     })
       .overrideProvider(PrismaService)
-      .useValue({
-        user: {
-          deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-          count: jest.fn().mockResolvedValue(0),
-          create: jest.fn().mockImplementation((args) =>
-            Promise.resolve({
-              id: 1,
-              ...args.data,
-            }),
-          ),
-        },
-        $connect: jest.fn(),
-        $disconnect: jest.fn(),
-        $on: jest.fn(),
-      })
-
+      .useValue(prismaMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -57,8 +64,7 @@ describe('UserController', () => {
           password: '',
           name: '',
         });
-
-      logger.info('Response:', response.body);
+      logger.info(response.body);
 
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
@@ -72,12 +78,28 @@ describe('UserController', () => {
           password: 'test',
           name: 'test',
         });
-
-      logger.info('Response:', response.body);
+      logger.info(response.body);
 
       expect(response.status).toBe(200);
       expect(response.body.data.username).toBe('test');
       expect(response.body.data.name).toBe('test');
+    });
+
+    it('should be rejected when username already exists', async () => {
+      prismaMock.user.count.mockResolvedValue(1);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/users')
+        .send({
+          username: 'test',
+          password: 'test',
+          name: 'test',
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
     });
   });
 });
