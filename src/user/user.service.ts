@@ -7,6 +7,7 @@ import { PrismaService } from '../common/prisma.service';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt'
 import { randomUUID } from 'crypto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -82,5 +83,12 @@ export class UserService {
         name : user.name,
         token: user.token,
     };
+  }
+
+  async get(user: User): Promise<UserResponse> {
+    return {
+      username: user.username,
+      name : user.name
+    }
   }
 }

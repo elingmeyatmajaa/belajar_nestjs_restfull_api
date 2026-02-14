@@ -27,6 +27,7 @@ describe('UserController', () => {
       create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      findFirst: jest.fn(),
     },
     $connect: jest.fn(),
     $disconnect: jest.fn(),
@@ -156,6 +157,43 @@ describe('UserController', () => {
       expect(response.body.data.username).toBe('test');
       expect(response.body.data.name).toBe('test');
       expect(response.body.data.token).toBeDefined();
+    });
+  });
+
+  describe('GET /api/users/current', () => {
+    prismaMock.user.findFirst.mockImplementation(({ where }) => {
+      if (where.token === 'test') {
+        return Promise.resolve({
+          id: 1,
+          username: 'test',
+          name: 'test',
+          password: 'hashed',
+          token: 'test',
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    it('should return 400 when validation fails', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/users/current') // ✅ pakai GET
+        .set('Authorization', 'wrong');
+      logger.info(response.body);
+
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
+    });
+
+    it('should be able to get current user', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/users/current') // ✅ pakai GET
+        .set('Authorization', 'test'); // token sesuai mock
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.username).toBe('test');
+      expect(response.body.data.name).toBe('test');
     });
   });
 });

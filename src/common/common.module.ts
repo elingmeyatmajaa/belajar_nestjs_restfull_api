@@ -1,27 +1,36 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { WinstonModule } from "nest-winston"
+import { WinstonModule } from 'nest-winston';
 
-import * as winston from "winston"
+import * as winston from 'winston';
 import { PrismaService } from './prisma.service';
 import { ValidationService } from './validation.service';
+import { AuthMiddleware } from './auth.middleware';
 
 @Global()
 @Module({
-    imports: [
-        WinstonModule.forRoot({
-            format: winston.format.json(),
-            transports: [new winston.transports.Console()]
-        }),
-        ConfigModule.forRoot({
-            isGlobal: true,
-        })
-    ],
-    providers: [PrismaService, ValidationService, {
-        provide: 'APP_FILTER',
-        useClass: require('./error.filter').ErrorFilter,
-    }],
-    exports: [PrismaService, ValidationService]
+  imports: [
+    WinstonModule.forRoot({
+      format: winston.format.json(),
+      transports: [new winston.transports.Console()],
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
+  providers: [
+    PrismaService,
+    ValidationService,
+    {
+      provide: 'APP_FILTER',
+      useClass: require('./error.filter').ErrorFilter,
+    },
+  ],
+  exports: [PrismaService, ValidationService],
 })
-export class CommonModule {}
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('/api/*');
+  }
+}
