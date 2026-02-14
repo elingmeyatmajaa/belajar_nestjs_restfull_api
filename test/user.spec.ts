@@ -8,6 +8,12 @@ import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { TestService } from './test.service';
 import { TestModule } from './test.module';
+import e from 'express';
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
 
 describe('UserController', () => {
   let app: INestApplication<App>;
@@ -19,6 +25,8 @@ describe('UserController', () => {
       deleteMany: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
     $connect: jest.fn(),
     $disconnect: jest.fn(),
@@ -100,6 +108,54 @@ describe('UserController', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
+    });
+  });
+
+  describe('POST /api/users/login', () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 1,
+      username: 'test',
+      name: 'test',
+      password: 'hashed',
+      token: null,
+    });
+
+    prismaMock.user.update.mockImplementation(({ data }) =>
+      Promise.resolve({
+        id: 1,
+        username: 'test',
+        name: 'test',
+        password: 'hashed',
+        token: data.token,
+      }),
+    );
+
+    it('should return 400 when validation fails', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/users/login')
+        .send({
+          username: '',
+          password: '',
+        });
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    });
+
+    it('should be able to login', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/users/login')
+        .send({
+          username: 'test',
+          password: 'test',
+        });
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.username).toBe('test');
+      expect(response.body.data.name).toBe('test');
+      expect(response.body.data.token).toBeDefined();
     });
   });
 });

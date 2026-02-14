@@ -6,6 +6,7 @@ import { Logger } from 'winston';
 import { PrismaService } from '../common/prisma.service';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt'
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UserService {
@@ -41,6 +42,45 @@ export class UserService {
     return {
         username: user.username,
         name : user.name,
+    };
+  }
+
+
+  async login(request: LoginUserRequest): Promise<UserResponse> {
+    this.logger.info(`UserService Login user ${JSON.stringify(request)}`);
+    
+    const loginRequest: LoginUserRequest =
+      this.validationService.validate(UserValidation.LOGIN, request);
+
+    let user = await this.primaService.user.findUnique({
+        where: {
+            username: loginRequest.username,
+        }
+    });
+
+    if(!user){
+        throw new HttpException('Invalid username or password', 401);
+    }
+
+    const isPasswordValid = await bcrypt.compare(loginRequest.password, user.password);
+
+    if(!isPasswordValid){
+        throw new HttpException('Invalid username or password', 401);
+    }
+
+    user = await this.primaService.user.update({
+        where: {
+            username: loginRequest.username,
+        },
+        data: {
+            token: randomUUID(),
+        }
+    })
+
+    return {
+        username: user.username,
+        name : user.name,
+        token: user.token,
     };
   }
 }
