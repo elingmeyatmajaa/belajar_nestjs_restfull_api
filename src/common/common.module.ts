@@ -18,7 +18,10 @@ import { ValidationService } from './validation.service';
             isGlobal: true,
         })
     ],
-    providers: [PrismaService, ValidationService],
+    providers: [PrismaService, ValidationService, {
+        provide: 'APP_FILTER',
+        useClass: require('./error.filter').ErrorFilter,
+    }],
     exports: [PrismaService, ValidationService]
 })
 export class CommonModule {}
