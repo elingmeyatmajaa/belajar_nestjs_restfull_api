@@ -36,20 +36,22 @@ export class UserController {
     };
   }
 
-  @Get('/current')
-  @HttpCode(200)
-  async get(@Auth() user): Promise<webResponse<UserResponse>> {
-    const result = await this.userService.get(user);
-    return {
-      data: result,
-    };
-  }
+@Get('/current')
+@HttpCode(200)
+async get(
+  @Auth() user: User,
+): Promise<webResponse<UserResponse>> {
+  const result = await this.userService.get(user);
+  return {
+    data: result,
+  };
+}
 
   @Patch('/current')
   @HttpCode(200)
   async update(
-    @Auth user ,
-    @Body request: UpdateUserRequest,
+    @Auth() user: User,
+    @Body() request: UpdateUserRequest,
   ): Promise<webResponse<UserResponse>> {
     const result = await this.userService.update(user, request);
     return {
