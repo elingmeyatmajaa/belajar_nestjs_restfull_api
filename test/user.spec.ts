@@ -312,6 +312,10 @@ describe('UserController', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data).toBe(true);
+
+      const user = await testService.getUser();
+      expect(user.token).toBeNull();
+      
     });
   });
 });

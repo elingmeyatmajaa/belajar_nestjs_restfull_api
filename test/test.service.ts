@@ -14,6 +14,15 @@ export class TestService {
         });
     }
 
+
+       async getUser():Promise<User> {
+        return this.prismaService.user.findUnique({
+            where: {
+                username: 'test'
+            }
+        });
+    }
+    
     async createUser(){
         await this.prismaService.user.create({
             data: {
@@ -24,4 +33,6 @@ export class TestService {
             }
         });
     }
+
+
 }
