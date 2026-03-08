@@ -8,8 +8,8 @@ import {
   UserResponse,
 } from '../model/user.model';
 import { Auth } from '../common/auth.decorator';
-import { User } from '@prisma/client';
 import { tr } from 'zod/locales';
+import type { User } from '@prisma/client';
 
 @Controller('/api/users')
 export class UserController {

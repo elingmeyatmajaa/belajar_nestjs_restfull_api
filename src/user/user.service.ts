@@ -12,8 +12,7 @@ import { PrismaService } from '../common/prisma.service';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
-import { User } from '@prisma/client';
-import { request } from 'https';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -25,9 +24,11 @@ export class UserService {
 
   async register(request: RegisterUserRequest): Promise<UserResponse> {
     this.logger.debug(`Register new user ${JSON.stringify(request)}`);
-    const registerRequest: RegisterUserRequest =
-      this.validationService.validate(UserValidation.REGISTER, request);
-
+    const registerRequest =
+      this.validationService.validate<RegisterUserRequest>(
+        UserValidation.REGISTER,
+        request,
+      );
     const totalUserWithSameUsername = await this.primaService.user.count({
       where: {
         username: registerRequest.username,
@@ -38,8 +39,7 @@ export class UserService {
       throw new HttpException('Username already exists', 400);
     }
 
-    registerRequest.password = await bcrypt.hash(registerRequest.password, 10);
-
+    registerRequest.password = await bcrypt.hash(registerRequest.password!, 10);
     const user = await this.primaService.user.create({
       data: registerRequest,
     });
@@ -53,7 +53,7 @@ export class UserService {
   async login(request: LoginUserRequest): Promise<UserResponse> {
     this.logger.debug(`UserService Login user ${JSON.stringify(request)}`);
 
-    const loginRequest: LoginUserRequest = this.validationService.validate(
+    const loginRequest = this.validationService.validate<LoginUserRequest>(
       UserValidation.LOGIN,
       request,
     );
@@ -69,7 +69,7 @@ export class UserService {
     }
 
     const isPasswordValid = await bcrypt.compare(
-      loginRequest.password,
+      loginRequest.password!,
       user.password,
     );
 
@@ -106,11 +106,10 @@ export class UserService {
     );
 
     // Validasi input
-    const updateRequest: UpdateUserRequest = this.validationService.validate(
+    const updateRequest = this.validationService.validate<UpdateUserRequest>(
       UserValidation.UPDATE,
       request,
     );
-
     // Siapkan data update
     const dataToUpdate: Partial<User> = {};
 
@@ -135,11 +134,11 @@ export class UserService {
     };
   }
 
-
-  async logout (user: User): Promise<UserResponse> {
+  async logout(user: User): Promise<UserResponse> {
     const result = await this.primaService.user.update({
-      where: { 
-        username: user.username },
+      where: {
+        username: user.username,
+      },
       data: {
         token: null,
       },
@@ -149,5 +148,4 @@ export class UserService {
       name: result.name,
     };
   }
-
 }
