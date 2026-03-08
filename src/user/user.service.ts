@@ -100,40 +100,54 @@ export class UserService {
     };
   }
 
- async update(user: User, request: UpdateUserRequest): Promise<UserResponse> {
-  this.logger.debug(
-    `UserService Update user ${JSON.stringify(request)}, ${JSON.stringify(user)}`,
-  );
+  async update(user: User, request: UpdateUserRequest): Promise<UserResponse> {
+    this.logger.debug(
+      `UserService Update user ${JSON.stringify(request)}, ${JSON.stringify(user)}`,
+    );
 
-  // Validasi input
-  const updateRequest: UpdateUserRequest = this.validationService.validate(
-    UserValidation.UPDATE,
-    request,
-  );
+    // Validasi input
+    const updateRequest: UpdateUserRequest = this.validationService.validate(
+      UserValidation.UPDATE,
+      request,
+    );
 
-  // Siapkan data update
-  const dataToUpdate: Partial<User> = {};
+    // Siapkan data update
+    const dataToUpdate: Partial<User> = {};
 
-  if (updateRequest.name) {
-    dataToUpdate.name = updateRequest.name;
+    if (updateRequest.name) {
+      dataToUpdate.name = updateRequest.name;
+    }
+
+    if (updateRequest.password) {
+      dataToUpdate.password = await bcrypt.hash(updateRequest.password, 10);
+    }
+
+    // Update user di database
+    const updatedUser = await this.primaService.user.update({
+      where: { username: user.username },
+      data: dataToUpdate,
+    });
+
+    // Kembalikan response
+    return {
+      username: updatedUser.username,
+      name: updatedUser.name,
+    };
   }
 
-  if (updateRequest.password) {
-    dataToUpdate.password = await bcrypt.hash(updateRequest.password, 10);
+
+  async logout (user: User): Promise<UserResponse> {
+    const result = await this.primaService.user.update({
+      where: { 
+        username: user.username },
+      data: {
+        token: null,
+      },
+    });
+    return {
+      username: result.username,
+      name: result.name,
+    };
   }
-
-  // Update user di database
-  const updatedUser = await this.primaService.user.update({
-    where: { username: user.username },
-    data: dataToUpdate,
-  });
-
-  // Kembalikan response
-  return {
-    username: updatedUser.username,
-    name: updatedUser.name,
-  };
-}
-
 
 }
