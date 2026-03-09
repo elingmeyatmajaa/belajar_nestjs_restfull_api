@@ -24,24 +24,31 @@ export class UserService {
 
   async register(request: RegisterUserRequest): Promise<UserResponse> {
     this.logger.debug(`Register new user ${JSON.stringify(request)}`);
+
     const registerRequest =
       this.validationService.validate<RegisterUserRequest>(
         UserValidation.REGISTER,
         request,
       );
-    const totalUserWithSameUsername = await this.primaService.user.count({
-      where: {
-        username: registerRequest.username,
-      },
+
+    const existingCount = await this.primaService.user.count({
+      where: { username: registerRequest.username! }, // pastikan non-null
     });
 
-    if (totalUserWithSameUsername != 0) {
+    if (existingCount !== 0) {
       throw new HttpException('Username already exists', 400);
     }
 
-    registerRequest.password = await bcrypt.hash(registerRequest.password!, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(registerRequest.password!, 10);
+
+    // Buat user di database
     const user = await this.primaService.user.create({
-      data: registerRequest,
+      data: {
+        username: registerRequest.username!,
+        password: hashedPassword,
+        name: registerRequest.name!,
+      },
     });
 
     return {
@@ -59,9 +66,7 @@ export class UserService {
     );
 
     let user = await this.primaService.user.findUnique({
-      where: {
-        username: loginRequest.username,
-      },
+      where: { username: loginRequest.username! },
     });
 
     if (!user) {
@@ -78,18 +83,14 @@ export class UserService {
     }
 
     user = await this.primaService.user.update({
-      where: {
-        username: loginRequest.username,
-      },
-      data: {
-        token: randomUUID(),
-      },
+      where: { username: user.username },
+      data: { token: randomUUID() },
     });
 
     return {
       username: user.username,
       name: user.name,
-      token: user.token,
+      token: user.token ?? undefined, // ubah null jadi undefined
     };
   }
 
@@ -105,29 +106,22 @@ export class UserService {
       `UserService Update user ${JSON.stringify(request)}, ${JSON.stringify(user)}`,
     );
 
-    // Validasi input
     const updateRequest = this.validationService.validate<UpdateUserRequest>(
       UserValidation.UPDATE,
       request,
     );
-    // Siapkan data update
+
     const dataToUpdate: Partial<User> = {};
 
-    if (updateRequest.name) {
-      dataToUpdate.name = updateRequest.name;
-    }
-
-    if (updateRequest.password) {
+    if (updateRequest.name) dataToUpdate.name = updateRequest.name;
+    if (updateRequest.password)
       dataToUpdate.password = await bcrypt.hash(updateRequest.password, 10);
-    }
 
-    // Update user di database
     const updatedUser = await this.primaService.user.update({
       where: { username: user.username },
       data: dataToUpdate,
     });
 
-    // Kembalikan response
     return {
       username: updatedUser.username,
       name: updatedUser.name,
@@ -136,16 +130,14 @@ export class UserService {
 
   async logout(user: User): Promise<UserResponse> {
     const result = await this.primaService.user.update({
-      where: {
-        username: user.username,
-      },
-      data: {
-        token: null,
-      },
+      where: { username: user.username },
+      data: { token: null },
     });
+
     return {
       username: result.username,
       name: result.name,
+      token: result.token ?? undefined, // ubah null jadi undefined
     };
   }
 }

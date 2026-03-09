@@ -18,15 +18,13 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
-    "type": "module",
-
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-mariadb": "^7.4.0",
-    "@prisma/client": "^7.4.0",
+    "@prisma/client": "^7.4.2",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.4",
     "nest-winston": "^1.10.2",

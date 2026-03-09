@@ -45,12 +45,12 @@ describe('UserController', () => {
       }),
     );
     prismaMock.user.findUnique.mockResolvedValue({
-    id: 1,
-    username: 'test',
-    name: 'test',
-    password: 'hashed',
-    token: null,
-  });
+      id: 1,
+      username: 'test',
+      name: 'test',
+      password: 'hashed',
+      token: null,
+    });
     prismaMock.user.findFirst.mockImplementation(({ where }) => {
       if (where.token === 'test') {
         return Promise.resolve({
@@ -186,6 +186,8 @@ describe('UserController', () => {
       expect(response.body.data.name).toBe('test');
       expect(response.body.data.token).toBeDefined();
     });
+
+    
   });
 
   describe('GET /api/users/current', () => {
@@ -222,6 +224,13 @@ describe('UserController', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.username).toBe('test');
       expect(response.body.data.name).toBe('test');
+    });
+    it('should return null when user not found', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+
+      const user = await testService.getUser();
+
+      expect(user).toBeNull();
     });
   });
 
@@ -287,8 +296,8 @@ describe('UserController', () => {
     });
   });
 
-   describe('DELETE /api/users/current', () => {
-     beforeEach(async () => {
+  describe('DELETE /api/users/current', () => {
+    beforeEach(async () => {
       await testService.deleteUser();
       await testService.createUser();
     });
@@ -315,7 +324,6 @@ describe('UserController', () => {
 
       const user = await testService.getUser();
       expect(user.token).toBeNull();
-      
     });
   });
 });
