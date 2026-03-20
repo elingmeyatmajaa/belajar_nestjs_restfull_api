@@ -186,8 +186,6 @@ describe('UserController', () => {
       expect(response.body.data.name).toBe('test');
       expect(response.body.data.token).toBeDefined();
     });
-
-    
   });
 
   describe('GET /api/users/current', () => {

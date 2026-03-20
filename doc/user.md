@@ -122,7 +122,7 @@ Response Body Error:
  
  ```json
  {
-    "errors": "Unauthorization"
+    "errors": "Unauthorized"
  }
  ```
 

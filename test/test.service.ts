@@ -22,14 +22,14 @@ export class TestService {
     });
   }
 
-  async createUser(): Promise<User> {
-    await this.prismaService.user.create({
-      data: {
-        username: 'test',
-        password: await bcrypt.hash('test', 10),
-        name: 'test',
-        token: 'test',
-      },
-    });
-  }
+ async createUser(data?: Partial<User>): Promise<User> {
+  return this.prismaService.user.create({
+    data: {
+      username: data?.username ?? 'test',
+      password: await bcrypt.hash(data?.password ?? 'test', 10),
+      name: data?.name ?? 'test',
+      token: data?.token ?? 'test',
+    },
+  });
+}
 }
